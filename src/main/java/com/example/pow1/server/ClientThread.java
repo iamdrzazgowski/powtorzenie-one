@@ -1,40 +1,42 @@
 package com.example.pow1.server;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
 
 public class ClientThread extends Thread{
-    private Socket socket;
+    private Socket clientSocket;
     private Server server;
-    private PrintWriter output;
+    private PrintWriter writer;
 
     public ClientThread(Socket socket, Server server) {
         this.server = server;
-        this.socket = socket;
+        this.clientSocket = socket;
     }
 
-    @Override
-    public void run() {
-        try {
-            output = new PrintWriter(socket.getOutputStream(), true);
-            Scanner input = new Scanner(socket.getInputStream());
-
-            while (input.hasNextLine()) {
-                String message = input.nextLine();
-                server.broadcast(message);
+    public void run(){
+        try{
+            BufferedReader inputStream = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            writer = new PrintWriter(clientSocket.getOutputStream(),true);
+            String message;
+            while((message = inputStream.readLine())!=null){
+                server.broadcast(this,message);
+                System.out.println("Received message from client: "+ message);
             }
-
-            input.close();
-            output.close();
-            socket.close();
-        } catch (IOException e) {
+            inputStream.close();
+            writer.close();
+            clientSocket.close();
+            System.out.println("Closed\n");
+        }
+        catch(IOException e){
             e.printStackTrace();
         }
     }
 
     public void sendMessage(String message) {
-        output.println(message);
+        writer.println(message);
     }
 }

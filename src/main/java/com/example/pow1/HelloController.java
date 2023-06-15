@@ -17,6 +17,7 @@ import javafx.scene.paint.Color;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.function.Consumer;
 
 public class HelloController {
 
@@ -33,34 +34,49 @@ public class HelloController {
 
     public Server server;
     public ServerThread serverThread;
+    private Consumer<Dot> dotConsumer;
+    @FXML
     public void onMouseClicked(MouseEvent mouseEvent) {
         double x = mouseEvent.getX();
         double y = mouseEvent.getY();
         double radius = radiusSlider.getValue();
         Color color = colorPicker.getValue();
 
-        drawCircle(x,y,radius,color);
+//        drawCircle(x,y,radius,color);
+        Dot dot = new Dot(x,y,color,radius);
 
     }
 
-    private void drawCircle(double x, double y, double radius, Color color) {
+    public HelloController(){
+        dotConsumer=this::drawCircle;
+        server = new Server(5000);
+        serverThread = new ServerThread("localhost",5000);
+    }
+
+    private void drawCircle(Dot dot) {
         GraphicsContext graphicsContext = canvas.getGraphicsContext2D();
-        graphicsContext.setFill(color);
-        graphicsContext.fillOval(x - radius,y - radius,radius * 2 ,radius * 2);
+        graphicsContext.setFill(dot.color());
+        graphicsContext.fillOval(dot.x() - dot.radius(),dot.y()- dot.radius(),2* dot.radius(),2*dot.radius());
     }
 
+    private void setDotConsumer(Consumer<Dot> dotConsumer){
+        this.dotConsumer=dotConsumer;
+    }
+
+    @FXML
     public void onStartServerClicked(ActionEvent actionEvent) {
-        server = new Server(Integer.valueOf(portField.getText()));
-        try {
-            System.out.println("Connected");
-            server.listen();
+        // Implementacja logiki dla przycisku "Start Server & Connect"
+        // Ta metoda zostanie wywołana po kliknięciu na ten przycisk
 
-            serverThread = new ServerThread(addressField.getText(), Integer.valueOf(portField.getText()));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
+    public ServerThread connect(String name, int port){
+        return new ServerThread(name, port);
+    }
+
+    @FXML
     public void onConnectClicked(ActionEvent actionEvent) {
+        // Implementacja logiki dla przycisku "Connect"
+        // Ta metoda zostanie wywołana po kliknięciu na ten przycisk
     }
 }

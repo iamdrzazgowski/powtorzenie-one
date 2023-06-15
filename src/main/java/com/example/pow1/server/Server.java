@@ -6,7 +6,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Server {
+public class Server extends Thread{
     private ServerSocket serverSocket;
     private List<ClientThread> clients = new ArrayList<>();
 
@@ -27,7 +27,7 @@ public class Server {
         }
     }
 
-    public void broadcast(String message) {
+    public void broadcast(ClientThread sender, String message) {
         for (ClientThread client : clients) {
             client.sendMessage(message);
         }

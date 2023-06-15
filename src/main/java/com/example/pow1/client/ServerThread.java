@@ -5,21 +5,23 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-public class ServerThread {
+public class ServerThread extends Thread{
     private Socket serverSocket;
-    private PrintWriter output;
+    private PrintWriter writer;
 
     public ServerThread(String serverAddress, int serverPort) {
         try {
             serverSocket = new Socket(serverAddress, serverPort);
-            output = new PrintWriter(serverSocket.getOutputStream(), true);
+            writer = new PrintWriter((serverSocket.getOutputStream()),true);
+            System.out.println("Connected to server: "+serverSocket);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public void send(int x, int y, int radius) {
+    public void send(double x, double y, double radius) {
         String message = x + "," + y + "," + radius;
-        output.println(message);
+        writer.println(message);
+        System.out.println("Sent message to server: "+message);
     }
 }
