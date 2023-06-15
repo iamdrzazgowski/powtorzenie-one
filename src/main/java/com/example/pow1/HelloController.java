@@ -1,82 +1,81 @@
 package com.example.pow1;
 
-import com.example.pow1.client.ServerThread;
-import com.example.pow1.server.ClientThread;
-import com.example.pow1.server.Server;
-import javafx.event.ActionEvent;
+import client.ServerThread;
 import javafx.fxml.FXML;
-import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.ColorPicker;
-import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.paint.Color;
+import server.Server;
 
 import java.io.IOException;
-import java.net.Socket;
-import java.util.function.Consumer;
 
 public class HelloController {
+    private Server server;
+    private ServerThread serverThread;
+    private GraphicsContext graphicsContext;
+    @FXML
+    private TextField portField;
 
     @FXML
-    public Canvas canvas;
-    @FXML
-    public TextField addressField;
-    @FXML
-    public TextField portField;
-    @FXML
-    public ColorPicker colorPicker;
-    @FXML
-    public Slider radiusSlider;
+    private TextField addressField;
 
-    public Server server;
-    public ServerThread serverThread;
-    private Consumer<Dot> dotConsumer;
     @FXML
-    public void onMouseClicked(MouseEvent mouseEvent) {
-        double x = mouseEvent.getX();
-        double y = mouseEvent.getY();
+    private Slider radiusSlider;
+
+    @FXML
+    private Canvas canvas;
+
+    @FXML
+    private ColorPicker colorPicker;
+
+    @FXML
+    protected void onStartServerClicked() {
+        String host = addressField.getText().isEmpty() ? "localhost" : addressField.getText();
+        int port = portField.getText().isEmpty() ? 8080 : Integer.parseInt(portField.getText());
+        server = new Server(port);
+        try {
+            server.listen();
+            serverThread = new ServerThread(host, port);
+            serverThread.setDots(dot -> {
+                graphicsContext.setFill(dot.color());
+                graphicsContext.fillOval(dot.centerX(), dot.centerY(), dot.radius(), dot.radius());
+            });
+            serverThread.start();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        System.out.println("Server started, on port: " + port);
+    }
+
+    @FXML
+    protected void onConnectClicked() {
+        String host = addressField.getText().isEmpty() ? "localhost" : addressField.getText();
+        int port = portField.getText().isEmpty() ? 8080 : Integer.parseInt(portField.getText());
+        try {
+            serverThread = new ServerThread(host, port);
+            serverThread.setDots(dot -> {
+                graphicsContext.setFill(dot.color());
+                graphicsContext.fillOval(dot.centerX(), dot.centerY(), dot.radius(), dot.radius());
+            });
+            serverThread.start();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        System.out.println("You have been connected to server on port: " + port);
+    }
+    @FXML
+    protected void onMouseClicked(MouseEvent event){
         double radius = radiusSlider.getValue();
-        Color color = colorPicker.getValue();
-
-//        drawCircle(x,y,radius,color);
-        Dot dot = new Dot(x,y,color,radius);
-
-    }
-
-    public HelloController(){
-        dotConsumer=this::drawCircle;
-        server = new Server(5000);
-        serverThread = new ServerThread("localhost",5000);
-    }
-
-    private void drawCircle(Dot dot) {
-        GraphicsContext graphicsContext = canvas.getGraphicsContext2D();
-        graphicsContext.setFill(dot.color());
-        graphicsContext.fillOval(dot.x() - dot.radius(),dot.y()- dot.radius(),2* dot.radius(),2*dot.radius());
-    }
-
-    private void setDotConsumer(Consumer<Dot> dotConsumer){
-        this.dotConsumer=dotConsumer;
+        double centerX = event.getX() - (radius/2);
+        double centerY = event.getY() - (radius/2);
+        serverThread.send(centerX, centerY, radius, colorPicker.getValue());
     }
 
     @FXML
-    public void onStartServerClicked(ActionEvent actionEvent) {
-        // Implementacja logiki dla przycisku "Start Server & Connect"
-        // Ta metoda zostanie wywołana po kliknięciu na ten przycisk
-
-    }
-
-    public ServerThread connect(String name, int port){
-        return new ServerThread(name, port);
-    }
-
-    @FXML
-    public void onConnectClicked(ActionEvent actionEvent) {
-        // Implementacja logiki dla przycisku "Connect"
-        // Ta metoda zostanie wywołana po kliknięciu na ten przycisk
+    public void initialize(){
+        graphicsContext = canvas.getGraphicsContext2D();
     }
 }
